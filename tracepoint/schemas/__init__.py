@@ -1,5 +1,10 @@
 """API schema exports."""
 
+from tracepoint.schemas.dashboard import (
+    DashboardCountItem,
+    DashboardRecentFinding,
+    DashboardSummaryRead,
+)
 from tracepoint.schemas.duplicate import DuplicateCheckRequest, DuplicateCheckResponse
 from tracepoint.schemas.evidence import (
     EvidenceArtifact,
@@ -16,6 +21,9 @@ from tracepoint.schemas.intake import (
 from tracepoint.schemas.triage import TriageRequest, TriageResponse
 
 __all__ = [
+    "DashboardCountItem",
+    "DashboardRecentFinding",
+    "DashboardSummaryRead",
     "DuplicateCheckRequest",
     "DuplicateCheckResponse",
     "EvidenceArtifact",
