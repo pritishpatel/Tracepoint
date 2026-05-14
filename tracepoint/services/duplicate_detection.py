@@ -172,9 +172,15 @@ class DuplicateDetectionService:
         findings = self._load_candidate_findings()
         candidates = self._score_candidates(request, findings)
         limited_candidates = candidates[: request.top_k]
-        highest_similarity = limited_candidates[0].similarity if limited_candidates else 0.0
+        raw_highest_similarity = limited_candidates[0].similarity if limited_candidates else 0.0
 
-        decision = self._decision(highest_similarity, limited_candidates)
+        decision = self._decision(raw_highest_similarity, limited_candidates)
+        highest_similarity = (
+            round(raw_highest_similarity, 4) if decision != DuplicateDecision.NOT_DUPLICATE else 0.0
+        )
+        if decision == DuplicateDecision.NOT_DUPLICATE:
+            limited_candidates = []
+
         recommendation = self._recommendation(decision, limited_candidates)
 
         return DuplicateCheckResponse(
