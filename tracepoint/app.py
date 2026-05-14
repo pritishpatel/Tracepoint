@@ -14,9 +14,11 @@ from typing import cast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from tracepoint.api.findings import router as findings_router
 from tracepoint.api.health import router as health_router
 from tracepoint.core.config import Settings, get_settings
 from tracepoint.core.logging import configure_logging, get_logger
+from tracepoint.db import get_database_manager
 
 APPLICATION_TITLE = "Tracepoint"
 
@@ -66,10 +68,10 @@ class ApplicationFactory:
             allow_headers=["*"],
         )
 
-    @staticmethod
-    def register_routers(application: FastAPI) -> None:
+    def register_routers(self, application: FastAPI) -> None:
         """Register API routers."""
         application.include_router(health_router)
+        application.include_router(findings_router, prefix=self.settings.server.prefix)
 
 
 def get_application_settings(application: FastAPI) -> Settings:
@@ -82,6 +84,9 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     """Run startup and shutdown lifecycle hooks for the API process."""
     settings = get_application_settings(application)
     configure_logging(settings)
+
+    if settings.service.env == "local":
+        get_database_manager().create_all_tables()
 
     logger.info(
         "application_started",
@@ -104,11 +109,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Create the Tracepoint FastAPI application.
-
-    This function is intentionally small so tests, ASGI servers, and future CLI
-    code all construct the application through the same pathway.
-    """
+    """Create the Tracepoint FastAPI application."""
     return ApplicationFactory(settings=settings).create()
 
 

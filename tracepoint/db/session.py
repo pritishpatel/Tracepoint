@@ -53,20 +53,14 @@ class DatabaseManager:
         )
 
     def create_all_tables(self) -> None:
-        """Create all registered tables.
+        """Create all registered tables for local development and tests."""
+        import tracepoint.models  # noqa: F401
 
-        This is intended for local development and tests. Alembic will become
-        the source of truth for migrations once domain models stabilize.
-        """
         Base.metadata.create_all(bind=self.engine)
 
     @contextmanager
     def session_scope(self) -> Generator[Session, None, None]:
-        """Provide a transactional session scope.
-
-        The session commits on success and rolls back on failure. This keeps
-        transaction handling consistent across services and command-line tasks.
-        """
+        """Provide a transactional session scope."""
         session = self.session_factory()
 
         try:
