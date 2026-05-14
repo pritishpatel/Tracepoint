@@ -22,12 +22,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from tracepoint.api.activity import router as activity_router
 from tracepoint.api.dashboard import router as dashboard_router
 from tracepoint.api.duplicates import router as duplicates_router
 from tracepoint.api.evidence import router as evidence_router
 from tracepoint.api.findings import router as findings_router
 from tracepoint.api.health import router as health_router
 from tracepoint.api.intake import router as intake_router
+from tracepoint.api.trends import router as trends_router
 from tracepoint.api.triage import router as triage_router
 from tracepoint.core.config import Settings, get_settings
 from tracepoint.core.logging import configure_logging
@@ -93,6 +95,8 @@ class ApplicationFactory:
         app.include_router(triage_router, prefix=api_prefix)
         app.include_router(duplicates_router, prefix=api_prefix)
         app.include_router(dashboard_router, prefix=api_prefix)
+        app.include_router(trends_router, prefix=api_prefix)
+        app.include_router(activity_router, prefix=api_prefix)
         app.include_router(evidence_router, prefix=api_prefix)
         app.include_router(intake_router, prefix=api_prefix)
 

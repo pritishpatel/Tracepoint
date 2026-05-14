@@ -1,11 +1,17 @@
 """API schema exports."""
 
+from tracepoint.schemas.activity import ActivityItemRead, ActivityTimelineRead
 from tracepoint.schemas.dashboard import (
     DashboardCountItem,
     DashboardRecentFinding,
     DashboardSummaryRead,
 )
-from tracepoint.schemas.duplicate import DuplicateCheckRequest, DuplicateCheckResponse
+from tracepoint.schemas.duplicate import (
+    DuplicateCandidate,
+    DuplicateCheckRequest,
+    DuplicateCheckResponse,
+    DuplicateDecision,
+)
 from tracepoint.schemas.evidence import (
     EvidenceArtifact,
     EvidenceBundleCreate,
@@ -18,14 +24,26 @@ from tracepoint.schemas.intake import (
     IntakeReportRead,
     IntakeTriageRead,
 )
+from tracepoint.schemas.trends import (
+    CountBucketRead,
+    DailyFindingCountRead,
+    DashboardTrendsRead,
+)
 from tracepoint.schemas.triage import TriageRequest, TriageResponse
 
 __all__ = [
+    "ActivityItemRead",
+    "ActivityTimelineRead",
+    "CountBucketRead",
+    "DailyFindingCountRead",
     "DashboardCountItem",
     "DashboardRecentFinding",
     "DashboardSummaryRead",
+    "DashboardTrendsRead",
+    "DuplicateCandidate",
     "DuplicateCheckRequest",
     "DuplicateCheckResponse",
+    "DuplicateDecision",
     "EvidenceArtifact",
     "EvidenceBundleCreate",
     "EvidenceBundleRead",
