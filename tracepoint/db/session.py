@@ -1,66 +1,59 @@
 """Database engine and session management.
 
-This module owns SQLAlchemy engine construction and session lifecycle helpers.
-Application code should depend on DatabaseManager instead of constructing
-engines or sessions directly.
+The application uses SQLAlchemy sessions for unit-of-work boundaries and
+Alembic for schema management. Runtime application startup should not create or
+modify database tables automatically.
+
+For local development or isolated tests, `create_schema_for_development()` and
+`drop_schema_for_development()` are available as explicit utility methods.
 """
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
-from typing import Any
 
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
+from typing_extensions import Self
 
-from tracepoint.core.config import Settings, get_settings
+from tracepoint.core.config import get_settings
 from tracepoint.db.base import Base
 from tracepoint.db.errors import DatabaseConnectionError
 
 
 class DatabaseManager:
-    """Create and manage SQLAlchemy engine/session resources."""
+    """Own SQLAlchemy engine creation, sessions, and database health checks."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
-        self.settings = settings or get_settings()
+    def __init__(self, database_url: str | None = None) -> None:
+        """Initialize the manager with an explicit or configured database URL."""
+        settings = get_settings()
+        self.database_url = database_url or settings.db.url
         self.engine = self.create_engine()
-        self.session_factory = self.create_session_factory(self.engine)
-
-    def create_engine(self) -> Engine:
-        """Create a SQLAlchemy engine from application settings."""
-        engine_options: dict[str, Any] = {
-            "echo": self.settings.db.echo,
-            "pool_pre_ping": self.settings.db.pre_ping,
-            "future": True,
-        }
-
-        if self.settings.db.url.startswith("sqlite"):
-            engine_options["connect_args"] = {"check_same_thread": False}
-
-        return create_engine(self.settings.db.url, **engine_options)
-
-    @staticmethod
-    def create_session_factory(engine: Engine) -> sessionmaker[Session]:
-        """Create a SQLAlchemy session factory bound to the provided engine."""
-        return sessionmaker(
-            bind=engine,
+        self.session_factory = sessionmaker(
+            bind=self.engine,
             autoflush=False,
             autocommit=False,
             expire_on_commit=False,
-            class_=Session,
         )
 
-    def create_all_tables(self) -> None:
-        """Create all registered tables for local development and tests."""
-        import tracepoint.models  # noqa: F401
+    def create_engine(self) -> Engine:
+        """Create the SQLAlchemy engine for the configured database URL."""
+        connect_args: dict[str, object] = {}
 
-        Base.metadata.create_all(bind=self.engine)
+        if self.database_url.startswith("sqlite"):
+            connect_args["check_same_thread"] = False
+
+        return create_engine(
+            self.database_url,
+            pool_pre_ping=True,
+            connect_args=connect_args,
+        )
 
     @contextmanager
-    def session_scope(self) -> Generator[Session, None, None]:
-        """Provide a transactional session scope."""
+    def session_scope(self) -> Iterator[Session]:
+        """Provide a transactional SQLAlchemy session scope."""
         session = self.session_factory()
 
         try:
@@ -73,13 +66,38 @@ class DatabaseManager:
             session.close()
 
     def health_check(self) -> bool:
-        """Return True when the database accepts a simple query."""
+        """Verify that the configured database accepts a basic query."""
         try:
             with self.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
             return True
         except SQLAlchemyError as exc:
             raise DatabaseConnectionError("Database health check failed") from exc
+
+    def create_schema_for_development(self) -> None:
+        """Create all registered tables for local-only development workflows.
+
+        Production deployments should use Alembic migrations instead:
+
+            alembic upgrade head
+
+        This method exists for isolated test fixtures and quick local
+        experiments where migration execution would add unnecessary overhead.
+        """
+        Base.metadata.create_all(bind=self.engine)
+
+    def drop_schema_for_development(self) -> None:
+        """Drop all registered tables for local-only development workflows."""
+        Base.metadata.drop_all(bind=self.engine)
+
+    def dispose(self) -> None:
+        """Release pooled database connections held by the engine."""
+        self.engine.dispose()
+
+    @classmethod
+    def from_url(cls, database_url: str) -> Self:
+        """Create a manager from an explicit database URL."""
+        return cls(database_url=database_url)
 
 
 database_manager = DatabaseManager()
