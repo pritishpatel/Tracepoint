@@ -1,0 +1,256 @@
+service:
+  name: tracepoint-api
+  version: "0.1.0"
+  env: local
+
+runtime:
+  debug: true
+  timezone: UTC
+
+server:
+  host: 127.0.0.1
+  port: 8000
+  reload: true
+  prefix: /api/v1
+
+  docs:
+    enabled: true
+    swagger: /docs
+    redoc: /redoc
+    openapi: /openapi.json
+
+  cors:
+    enabled: true
+    origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+      - http://localhost:8501
+      - http://127.0.0.1:8501
+
+  limits:
+    timeout_s: 60
+    body_mb: 10
+    page: 50
+    max_page: 200
+
+db:
+  url: sqlite:///./tracepoint.db
+  echo: false
+  pre_ping: true
+  migrate: false
+
+paths:
+  base: ./var
+  cache: ./var/cache
+  evidence: ./var/evidence
+  vectors: ./var/vectors
+
+log:
+  level: INFO
+  format: console
+  redact: true
+  requests: true
+  audit: true
+
+security:
+  redact_secrets: true
+  redact_pii: true
+
+  approval:
+    - change_severity
+    - close_finding
+    - mark_duplicate
+    - mark_false_positive
+    - create_external_ticket
+    - execute_containment_action
+
+  block:
+    - reveal_secret
+    - execute_shell_command
+    - delete_audit_log
+    - disable_guardrails
+
+llm:
+  enabled: false
+  provider: openai
+  model: gpt-5-nano
+  key_env: OPENAI_API_KEY
+  base_url: https://api.openai.com/v1
+  temperature: 0.0
+  max_tokens: 1200
+  timeout_s: 30
+  json_output: true
+  retries: 1
+  redact_input: true
+  store_prompt_hash: true
+  store_raw_prompts: false
+  store_outputs: true
+
+providers:
+  openai:
+    key_env: OPENAI_API_KEY
+    base_url: https://api.openai.com/v1
+    cheap: gpt-5-nano
+    default: gpt-5-mini
+    strong: gpt-5
+
+  gemini:
+    key_env: GEMINI_API_KEY
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    cheap: gemini-2.5-flash-lite
+    default: gemini-2.5-flash
+    strong: gemini-2.5-pro
+
+  anthropic:
+    key_env: ANTHROPIC_API_KEY
+    base_url: https://api.anthropic.com
+    cheap: claude-haiku-4-5
+    default: claude-haiku-4-5
+    strong: claude-sonnet-4-5
+
+  xai:
+    key_env: XAI_API_KEY
+    base_url: https://api.x.ai/v1
+    cheap: grok-4.3
+    default: grok-4.3
+    strong: grok-4.3
+
+  kimi:
+    key_env: KIMI_API_KEY
+    base_url: https://api.moonshot.ai/v1
+    cheap: kimi-k2.6
+    default: kimi-k2.6
+    strong: kimi-k2.6
+
+  compatible:
+    key_env: OPENAI_COMPATIBLE_API_KEY
+    base_url: null
+    cheap: null
+    default: null
+    strong: null
+
+guardrails:
+  enabled: true
+  prompt_injection: quarantine
+  min_confidence: 0.70
+  secret_token: "[REDACTED_SECRET]"
+  pii_token: "[REDACTED_PII]"
+  case_boundary: true
+
+intake:
+  sources:
+    - manual
+    - bug_bounty
+    - dast
+    - sast
+    - secret_scan
+    - cloud_alert
+    - edr_alert
+    - dlp_alert
+    - darkweb
+
+  title_min: 5
+  title_max: 300
+  report_min: 10
+  report_max: 50000
+
+triage:
+  auto: true
+  rules: true
+
+  confidence:
+    accept: 0.85
+    review: 0.60
+
+  duplicates:
+    enabled: true
+    top_k: 5
+    threshold: 0.78
+
+  severity:
+    default: unknown
+    values:
+      - unknown
+      - low
+      - medium
+      - high
+      - critical
+
+  status:
+    initial: new
+    values:
+      - new
+      - triaged
+      - needs_human_review
+      - duplicate
+      - false_positive
+      - accepted
+      - in_remediation
+      - ready_for_retest
+      - closed
+
+risk:
+  enabled: true
+  weights:
+    impact: 0.25
+    exploitability: 0.20
+    asset: 0.20
+    data: 0.15
+    exposure: 0.10
+    confidence: 0.10
+
+sla:
+  critical: 48h
+  high: 7d
+  medium: 30d
+  low: 90d
+
+investigation:
+  enabled: true
+  window_min: 60
+  max_window_h: 24
+
+  logs:
+    auth: ./data/logs/auth.jsonl
+    api: ./data/logs/api_gateway.jsonl
+    cloud: ./data/logs/cloud_audit.jsonl
+    edr: ./data/logs/edr.jsonl
+    dlp: ./data/logs/dlp.jsonl
+    creds: ./data/logs/credential_exposure.jsonl
+    secrets: ./data/logs/secret_scan.jsonl
+
+remediation:
+  enabled: true
+  recommend: true
+  require_retest: true
+  require_approval: true
+  owner: security-operations
+
+evidence:
+  enabled: true
+  path: ./var/evidence
+  markdown: true
+  json_output: true
+  pdf: false
+
+embeddings:
+  enabled: true
+  model: sentence-transformers/all-MiniLM-L6-v2
+  dim: 384
+  normalize: true
+  batch: 32
+
+vectors:
+  provider: faiss
+  path: ./var/vectors
+
+data:
+  seed: false
+  findings: ./data/demo/findings.jsonl
+  history: ./data/demo/historical_findings.jsonl
+  services: ./data/demo/service_catalog.yaml
+
+dev:
+  mock_llm: true
+  mock_integrations: true
+  debug_routes: true
