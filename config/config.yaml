@@ -72,62 +72,43 @@ security:
 
 llm:
   enabled: false
+
+  # Manually choose one provider:
+  # openai | gemini | anthropic | xai | kimi | compatible
   provider: openai
+
+  # Manually set the exact model for the selected provider.
+  # Examples:
+  # OpenAI: gpt-5-nano, gpt-5-mini, gpt-5
+  # Gemini: gemini-2.5-flash-lite, gemini-2.5-flash, gemini-2.5-pro
+  # Anthropic: claude-haiku-4-5, claude-sonnet-4-5
+  # xAI: grok-4.3
+  # Kimi: kimi-k2.6
   model: gpt-5-nano
-  key_env: OPENAI_API_KEY
+
+  # Dummy value only. Do not commit a real API key.
+  # For local testing, replace this manually or use a local ignored config later.
+  api_key: dummy-openai-api-key
+
+  # Manually set the provider base URL.
+  # OpenAI: https://api.openai.com/v1
+  # Gemini: https://generativelanguage.googleapis.com/v1beta
+  # Anthropic: https://api.anthropic.com
+  # xAI: https://api.x.ai/v1
+  # Kimi: https://api.moonshot.ai/v1
+  # OpenAI-compatible: your custom compatible endpoint
   base_url: https://api.openai.com/v1
+
   temperature: 0.0
   max_tokens: 1200
   timeout_s: 30
   json_output: true
   retries: 1
+
   redact_input: true
   store_prompt_hash: true
   store_raw_prompts: false
   store_outputs: true
-
-providers:
-  openai:
-    key_env: OPENAI_API_KEY
-    base_url: https://api.openai.com/v1
-    cheap: gpt-5-nano
-    default: gpt-5-mini
-    strong: gpt-5
-
-  gemini:
-    key_env: GEMINI_API_KEY
-    base_url: https://generativelanguage.googleapis.com/v1beta
-    cheap: gemini-2.5-flash-lite
-    default: gemini-2.5-flash
-    strong: gemini-2.5-pro
-
-  anthropic:
-    key_env: ANTHROPIC_API_KEY
-    base_url: https://api.anthropic.com
-    cheap: claude-haiku-4-5
-    default: claude-haiku-4-5
-    strong: claude-sonnet-4-5
-
-  xai:
-    key_env: XAI_API_KEY
-    base_url: https://api.x.ai/v1
-    cheap: grok-4.3
-    default: grok-4.3
-    strong: grok-4.3
-
-  kimi:
-    key_env: KIMI_API_KEY
-    base_url: https://api.moonshot.ai/v1
-    cheap: kimi-k2.6
-    default: kimi-k2.6
-    strong: kimi-k2.6
-
-  compatible:
-    key_env: OPENAI_COMPATIBLE_API_KEY
-    base_url: null
-    cheap: null
-    default: null
-    strong: null
 
 guardrails:
   enabled: true
