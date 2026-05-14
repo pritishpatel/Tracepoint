@@ -57,3 +57,5 @@ tracepoint_exports/
 tracepoint_evidence/
 tracepoint_vector_store/
 tracepoint_logs/
+
+artifacts/
