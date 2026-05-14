@@ -1,4 +1,9 @@
-"""Configuration loading for Tracepoint."""
+"""Configuration loading for Tracepoint.
+
+The loader is intentionally the only module that knows how configuration files
+are discovered, merged, overridden by environment variables, and validated.
+Everything else imports typed Settings through get_settings().
+"""
 
 from __future__ import annotations
 
@@ -8,7 +13,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from pydantic import ValidationError
@@ -54,18 +59,27 @@ class ConfigLoader:
         """Return merged configuration data before schema validation."""
         active_environment = environment or os.getenv("TRACEPOINT_ENV", "local")
 
-        config_data = self.read_yaml_file("config.yaml")
-        environment_config = self.read_yaml_file(f"config.{active_environment}.yaml")
-        config_data = self.merge_config_layers(config_data, environment_config)
+        config_data = self.read_yaml_mapping("config.yaml")
+        config_data = self.merge_config_layers(
+            config_data,
+            self.read_yaml_mapping(f"config.{active_environment}.yaml"),
+        )
 
         if active_environment == "local":
-            local_config = self.read_yaml_file("config.local.yaml")
-            config_data = self.merge_config_layers(config_data, local_config)
+            config_data = self.merge_config_layers(
+                config_data,
+                self.read_yaml_mapping("config.local.yaml"),
+            )
 
         config_data = self.apply_environment_overrides(config_data)
-        return self.resolve_environment_placeholders(config_data)
+        resolved_config = self.resolve_environment_placeholders(config_data)
 
-    def read_yaml_file(self, file_name: str) -> dict[str, Any]:
+        if not isinstance(resolved_config, dict):
+            raise ConfigValidationError("Resolved configuration must be a mapping")
+
+        return cast(dict[str, Any], resolved_config)
+
+    def read_yaml_mapping(self, file_name: str) -> dict[str, Any]:
         """Read a YAML mapping from the configured config directory."""
         file_path = self.config_directory / file_name
 
@@ -74,16 +88,19 @@ class ConfigLoader:
 
         try:
             with file_path.open("r", encoding="utf-8") as config_file:
-                config_data = yaml.safe_load(config_file) or {}
+                loaded_config = yaml.safe_load(config_file)
         except yaml.YAMLError as exc:
             raise ConfigFileError(f"Invalid YAML in config file: {file_path}") from exc
         except OSError as exc:
             raise ConfigFileError(f"Unable to read config file: {file_path}") from exc
 
-        if not isinstance(config_data, dict):
+        if loaded_config is None:
+            return {}
+
+        if not isinstance(loaded_config, dict):
             raise ConfigFileError(f"Config file must contain a YAML mapping: {file_path}")
 
-        return config_data
+        return cast(dict[str, Any], loaded_config)
 
     def merge_config_layers(
         self,
