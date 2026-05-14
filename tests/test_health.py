@@ -38,3 +38,4 @@ def test_ready_endpoint() -> None:
     assert payload["status"] == "ready"
     assert payload["service"] == "tracepoint-api"
     assert payload["checks"]["config"] == "ok"
+    assert payload["checks"]["database"] == "ok"

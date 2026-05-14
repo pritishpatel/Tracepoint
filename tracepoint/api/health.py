@@ -8,6 +8,7 @@ from typing import Any, cast
 from fastapi import APIRouter, Request
 
 from tracepoint.core.config import Settings
+from tracepoint.db import DatabaseConnectionError, get_database_manager
 
 router = APIRouter(tags=["health"])
 
@@ -50,21 +51,28 @@ class HealthResponseBuilder:
         }
 
     def readiness(self) -> dict[str, Any]:
-        """Build the readiness response.
-
-        At this stage readiness only verifies that configuration loaded
-        successfully. Database readiness will be added after the database layer.
-        """
+        """Build the readiness response."""
         settings = self.settings()
+        checks = {
+            "config": "ok",
+            "database": self.database_status(),
+        }
 
         return {
-            "status": "ready",
+            "status": "ready" if all(value == "ok" for value in checks.values()) else "degraded",
             "service": settings.service.name,
-            "checks": {
-                "config": "ok",
-            },
+            "checks": checks,
             "timestamp": self.current_utc_timestamp(),
         }
+
+    @staticmethod
+    def database_status() -> str:
+        """Return database readiness status."""
+        try:
+            get_database_manager().health_check()
+            return "ok"
+        except DatabaseConnectionError:
+            return "error"
 
 
 @router.get("/health")
