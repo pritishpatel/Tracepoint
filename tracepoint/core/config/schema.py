@@ -62,7 +62,7 @@ class ServerLimitsConfig(StrictModel):
     max_page: int = Field(gt=0)
 
     @model_validator(mode="after")
-    def page_size_must_not_exceed_maximum(self) -> "ServerLimitsConfig":
+    def page_size_must_not_exceed_maximum(self) -> ServerLimitsConfig:
         if self.page > self.max_page:
             raise ValueError("server.limits.page cannot exceed server.limits.max_page")
         return self
@@ -89,7 +89,7 @@ class DatabaseConfig(StrictModel):
     migrate: bool
 
     @model_validator(mode="after")
-    def database_url_must_be_supported(self) -> "DatabaseConfig":
+    def database_url_must_be_supported(self) -> DatabaseConfig:
         supported_prefixes = (
             "sqlite:///",
             "postgresql://",
@@ -155,7 +155,7 @@ class LLMConfig(StrictModel):
     store_outputs: bool
 
     @model_validator(mode="after")
-    def raw_prompt_storage_requires_redaction(self) -> "LLMConfig":
+    def raw_prompt_storage_requires_redaction(self) -> LLMConfig:
         if self.store_raw_prompts and not self.redact_input:
             raise ValueError("raw prompt storage requires input redaction")
         return self
@@ -182,7 +182,7 @@ class IntakeConfig(StrictModel):
     report_max: int = Field(gt=0)
 
     @model_validator(mode="after")
-    def minimum_lengths_must_not_exceed_maximums(self) -> "IntakeConfig":
+    def minimum_lengths_must_not_exceed_maximums(self) -> IntakeConfig:
         if self.title_min > self.title_max:
             raise ValueError("intake.title_min cannot exceed intake.title_max")
         if self.report_min > self.report_max:
@@ -197,7 +197,7 @@ class ConfidenceConfig(StrictModel):
     review: float = Field(ge=0.0, le=1.0)
 
     @model_validator(mode="after")
-    def review_threshold_must_not_exceed_accept_threshold(self) -> "ConfidenceConfig":
+    def review_threshold_must_not_exceed_accept_threshold(self) -> ConfidenceConfig:
         if self.review > self.accept:
             raise ValueError("triage.confidence.review cannot exceed triage.confidence.accept")
         return self
@@ -219,7 +219,7 @@ class EnumListConfig(StrictModel):
     values: list[str]
 
     @model_validator(mode="after")
-    def selected_value_must_be_allowed(self) -> "EnumListConfig":
+    def selected_value_must_be_allowed(self) -> EnumListConfig:
         selected_value = self.default if self.default is not None else self.initial
 
         if selected_value is not None and selected_value not in self.values:
@@ -246,7 +246,7 @@ class RiskConfig(StrictModel):
     weights: dict[str, float]
 
     @model_validator(mode="after")
-    def weights_must_sum_to_one(self) -> "RiskConfig":
+    def weights_must_sum_to_one(self) -> RiskConfig:
         total_weight = sum(self.weights.values())
 
         if abs(total_weight - 1.0) > 0.001:
