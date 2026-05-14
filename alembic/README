@@ -1,0 +1,15 @@
+Tracepoint database migrations
+==============================
+
+This directory contains Alembic migrations for Tracepoint.
+
+Common commands:
+
+  alembic upgrade head
+  alembic downgrade -1
+  alembic current
+  alembic history
+
+The migration environment reads the database URL from config/config.yaml through
+Tracepoint's typed configuration loader. Do not hardcode database credentials in
+alembic.ini.
