@@ -6,10 +6,12 @@ from tracepoint.models.finding import (
     FindingSource,
     FindingStatus,
 )
+from tracepoint.models.triage_result import TriageResult
 
 __all__ = [
     "Finding",
     "FindingSeverity",
     "FindingSource",
     "FindingStatus",
+    "TriageResult",
 ]

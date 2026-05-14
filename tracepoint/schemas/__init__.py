@@ -4,18 +4,17 @@ from tracepoint.schemas.finding import FindingCreate, FindingListResponse, Findi
 from tracepoint.schemas.triage import (
     TriageRequest,
     TriageResponse,
-    TriageSeverity,
-    TriageValidity,
     VulnerabilityCategory,
 )
+from tracepoint.schemas.triage_result import PersistedTriageResponse, TriageResultRead
 
 __all__ = [
     "FindingCreate",
     "FindingListResponse",
     "FindingRead",
+    "PersistedTriageResponse",
     "TriageRequest",
     "TriageResponse",
-    "TriageSeverity",
-    "TriageValidity",
+    "TriageResultRead",
     "VulnerabilityCategory",
 ]
