@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+tracepoint.db
+test_tracepoint.db
+
+# Runtime artifacts
+var/
+logs/
+exports/
+evidence/
+vector-indexes/
+.cache/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Project generated artifacts
+tracepoint_runtime/
+tracepoint_exports/
+tracepoint_evidence/
+tracepoint_vector_store/
+tracepoint_logs/
