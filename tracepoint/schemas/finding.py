@@ -78,3 +78,26 @@ class FindingProvenanceRead(BaseModel):
     known_ransomware_use: str | None = None
     notes: str | None = None
     raw: dict[str, str] = Field(default_factory=dict)
+
+
+class FindingKevDetailRead(BaseModel):
+    """Operational KEV details and prioritization for a finding."""
+
+    finding_id: str
+    title: str
+    source: str
+    cve: str | None = None
+    vendor_project: str | None = None
+    product: str | None = None
+    vulnerability: str | None = None
+    cwes: list[str] = Field(default_factory=list)
+    kev_date_added: str | None = None
+    kev_due_date: str | None = None
+    days_until_due: int | None = None
+    is_overdue: bool
+    known_ransomware_use: bool
+    required_action: str | None = None
+    notes: str | None = None
+    severity: str
+    category: str | None = None
+    priority_reason: str

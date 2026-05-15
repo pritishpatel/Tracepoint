@@ -7,11 +7,13 @@ audit evidence workflows should attach to this layer instead of bypassing it.
 
 from __future__ import annotations
 
+from datetime import date, datetime
+
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from tracepoint.models.finding import Finding
-from tracepoint.schemas.finding import FindingCreate, FindingProvenanceRead
+from tracepoint.schemas.finding import FindingCreate, FindingKevDetailRead, FindingProvenanceRead
 
 
 def _parse_key_value_description(description: str) -> dict[str, str]:
@@ -49,6 +51,49 @@ def _parse_cwes(value: str | None) -> list[str]:
         return []
 
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _parse_date(value: str | None) -> date | None:
+    """Parse YYYY-MM-DD date values safely."""
+    if not value:
+        return None
+
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _priority_reason(
+    *,
+    severity: str,
+    is_overdue: bool,
+    days_until_due: int | None,
+    known_ransomware_use: bool,
+    cve: str | None,
+) -> str:
+    """Return a concise operational prioritization reason."""
+    cve_label = cve or "Finding"
+
+    if is_overdue and known_ransomware_use:
+        return f"{cve_label} is overdue and has known ransomware use"
+
+    if is_overdue:
+        return f"{cve_label} is past the CISA KEV remediation due date"
+
+    if known_ransomware_use:
+        return f"{cve_label} has known ransomware campaign use"
+
+    if days_until_due is not None and days_until_due <= 3:
+        return f"{cve_label} is due within {days_until_due} day(s)"
+
+    if severity == "critical":
+        return f"{cve_label} is a critical CISA KEV finding"
+
+    if severity == "high":
+        return f"{cve_label} is a high-severity CISA KEV finding"
+
+    return f"{cve_label} is listed in the CISA KEV catalog"
 
 
 class FindingService:
@@ -97,6 +142,54 @@ class FindingService:
             known_ransomware_use=raw.get("Known ransomware use"),
             notes=raw.get("Notes"),
             raw=raw,
+        )
+
+    def get_kev_detail(self, finding_id: str) -> FindingKevDetailRead | None:
+        """Return operational CISA KEV details for a finding."""
+        finding = self.get_finding(finding_id)
+
+        if finding is None:
+            return None
+
+        provenance = self.get_provenance(finding_id)
+
+        if provenance is None:
+            return None
+
+        due_date = _parse_date(provenance.due_date)
+        today = date.today()
+        days_until_due = (due_date - today).days if due_date is not None else None
+        is_overdue = days_until_due is not None and days_until_due < 0
+        known_ransomware_use = (provenance.known_ransomware_use or "").strip().lower() == "known"
+
+        severity = str(finding.severity)
+        priority_reason = _priority_reason(
+            severity=severity,
+            is_overdue=is_overdue,
+            days_until_due=days_until_due,
+            known_ransomware_use=known_ransomware_use,
+            cve=provenance.cve,
+        )
+
+        return FindingKevDetailRead(
+            finding_id=finding.id,
+            title=finding.title,
+            source=finding.source,
+            cve=provenance.cve,
+            vendor_project=provenance.vendor_project,
+            product=provenance.product,
+            vulnerability=provenance.vulnerability,
+            cwes=provenance.cwes,
+            kev_date_added=provenance.date_added_to_kev,
+            kev_due_date=provenance.due_date,
+            days_until_due=days_until_due,
+            is_overdue=is_overdue,
+            known_ransomware_use=known_ransomware_use,
+            required_action=provenance.raw.get("Required action"),
+            notes=provenance.notes,
+            severity=severity,
+            category=finding.category,
+            priority_reason=priority_reason,
         )
 
     def list_findings(self, limit: int, offset: int) -> tuple[list[Finding], int]:

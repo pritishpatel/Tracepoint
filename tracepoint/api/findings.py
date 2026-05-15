@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from tracepoint.db import get_session
 from tracepoint.schemas.finding import (
     FindingCreate,
+    FindingKevDetailRead,
     FindingListResponse,
     FindingProvenanceRead,
     FindingRead,
@@ -56,6 +57,26 @@ def list_findings(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get(
+    "/{finding_id}/kev-detail",
+    response_model=FindingKevDetailRead,
+)
+def get_finding_kev_detail(
+    finding_id: str,
+    service: Annotated[FindingService, Depends(finding_service)],
+) -> FindingKevDetailRead:
+    """Return operational CISA KEV detail and prioritization for a finding."""
+    kev_detail = service.get_kev_detail(finding_id)
+
+    if kev_detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Finding not found",
+        )
+
+    return kev_detail
 
 
 @router.get(
