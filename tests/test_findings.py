@@ -132,3 +132,74 @@ def test_get_finding_provenance_returns_404_for_missing_finding(
     response = client.get("/api/v1/findings/not-a-real-id/provenance")
 
     assert response.status_code == 404
+
+
+def test_get_finding_kev_detail_returns_prioritized_cisa_metadata(
+    reset_database_schema,
+) -> None:
+    """KEV detail endpoint should return operational prioritization metadata."""
+    client = TestClient(app)
+
+    create_response = client.post(
+        "/api/v1/findings",
+        json={
+            "title": "CVE-2026-20182: Cisco Catalyst SD-WAN",
+            "description": (
+                "Source dataset: CISA Known Exploited Vulnerabilities Catalog\n"
+                "Source URL: https://www.cisa.gov/sites/default/files/feeds/"
+                "known_exploited_vulnerabilities.json\n"
+                "Catalog version: 2026.05.14\n"
+                "Catalog release date: 2026-05-14T17:31:13.2397Z\n"
+                "Catalog total records: 1591\n"
+                "CVE: CVE-2026-20182\n"
+                "Vendor/Project: Cisco\n"
+                "Product: Catalyst SD-WAN\n"
+                "Vulnerability: Cisco Catalyst SD-WAN Controller "
+                "Authentication Bypass Vulnerability\n"
+                "CWE(s): CWE-287\n"
+                "Date added to KEV: 2026-05-14\n"
+                "Required action: Apply emergency mitigation guidance.\n"
+                "Due date: 2026-05-17\n"
+                "Known ransomware use: Unknown\n"
+                "Notes: https://nvd.nist.gov/vuln/detail/CVE-2026-20182"
+            ),
+            "source": "manual",
+            "severity": "critical",
+            "category": "auth_bypass",
+            "affected_asset": "Cisco Catalyst SD-WAN CVE-2026-20182",
+            "reporter": "cisa-kev-catalog",
+            "confidence": 0.95,
+        },
+    )
+
+    assert create_response.status_code == 201
+    finding_id = create_response.json()["id"]
+
+    response = client.get(f"/api/v1/findings/{finding_id}/kev-detail")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["finding_id"] == finding_id
+    assert payload["cve"] == "CVE-2026-20182"
+    assert payload["vendor_project"] == "Cisco"
+    assert payload["product"] == "Catalyst SD-WAN"
+    assert payload["cwes"] == ["CWE-287"]
+    assert payload["kev_date_added"] == "2026-05-14"
+    assert payload["kev_due_date"] == "2026-05-17"
+    assert payload["known_ransomware_use"] is False
+    assert payload["required_action"] == "Apply emergency mitigation guidance."
+    assert payload["severity"] == "critical"
+    assert payload["category"] == "auth_bypass"
+    assert "CVE-2026-20182" in payload["priority_reason"]
+
+
+def test_get_finding_kev_detail_returns_404_for_missing_finding(
+    reset_database_schema,
+) -> None:
+    """Missing KEV detail should return 404."""
+    client = TestClient(app)
+
+    response = client.get("/api/v1/findings/not-a-real-id/kev-detail")
+
+    assert response.status_code == 404
