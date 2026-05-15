@@ -6,18 +6,14 @@ from tracepoint.schemas.dashboard import (
     DashboardRecentFinding,
     DashboardSummaryRead,
 )
-from tracepoint.schemas.duplicate import (
-    DuplicateCandidate,
-    DuplicateCheckRequest,
-    DuplicateCheckResponse,
-    DuplicateDecision,
-)
+from tracepoint.schemas.duplicate import DuplicateCheckRequest, DuplicateCheckResponse
 from tracepoint.schemas.evidence import (
     EvidenceArtifact,
     EvidenceBundleCreate,
     EvidenceBundleRead,
 )
-from tracepoint.schemas.export import ExportFindingRead, ExportSummaryRead
+from tracepoint.schemas.export import ExportFindingRead as ExportRecordRead
+from tracepoint.schemas.export import ExportSummaryRead
 from tracepoint.schemas.finding import FindingCreate, FindingListResponse, FindingRead
 from tracepoint.schemas.intake import (
     IntakeDuplicateRead,
@@ -25,38 +21,37 @@ from tracepoint.schemas.intake import (
     IntakeReportRead,
     IntakeTriageRead,
 )
-from tracepoint.schemas.trends import (
-    CountBucketRead,
-    DailyFindingCountRead,
-    DashboardTrendsRead,
-)
+from tracepoint.schemas.risk import FindingRiskRead, RiskFactorRead
+from tracepoint.schemas.sla import FindingSlaRead
+from tracepoint.schemas.trends import CountBucketRead as DashboardTrendBucket
+from tracepoint.schemas.trends import DashboardTrendsRead
 from tracepoint.schemas.triage import TriageRequest, TriageResponse
 
 __all__ = [
     "ActivityItemRead",
     "ActivityTimelineRead",
-    "CountBucketRead",
-    "DailyFindingCountRead",
     "DashboardCountItem",
     "DashboardRecentFinding",
     "DashboardSummaryRead",
+    "DashboardTrendBucket",
     "DashboardTrendsRead",
-    "DuplicateCandidate",
     "DuplicateCheckRequest",
     "DuplicateCheckResponse",
-    "DuplicateDecision",
     "EvidenceArtifact",
     "EvidenceBundleCreate",
     "EvidenceBundleRead",
-    "ExportFindingRead",
+    "ExportRecordRead",
     "ExportSummaryRead",
     "FindingCreate",
     "FindingListResponse",
     "FindingRead",
+    "FindingRiskRead",
+    "FindingSlaRead",
     "IntakeDuplicateRead",
     "IntakeReportCreate",
     "IntakeReportRead",
     "IntakeTriageRead",
+    "RiskFactorRead",
     "TriageRequest",
     "TriageResponse",
 ]
