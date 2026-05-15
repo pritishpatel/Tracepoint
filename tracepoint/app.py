@@ -30,6 +30,7 @@ from tracepoint.api.export import router as export_router
 from tracepoint.api.findings import router as findings_router
 from tracepoint.api.health import router as health_router
 from tracepoint.api.intake import router as intake_router
+from tracepoint.api.risk import router as risk_router
 from tracepoint.api.trends import router as trends_router
 from tracepoint.api.triage import router as triage_router
 from tracepoint.core.config import Settings, get_settings
@@ -101,6 +102,7 @@ class ApplicationFactory:
         app.include_router(evidence_router, prefix=api_prefix)
         app.include_router(export_router, prefix=api_prefix)
         app.include_router(intake_router, prefix=api_prefix)
+        app.include_router(risk_router, prefix=api_prefix)
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI) -> AsyncIterator[None]:
