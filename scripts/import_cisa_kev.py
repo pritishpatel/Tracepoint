@@ -375,7 +375,7 @@ def main() -> int:
     tracepoint_payload = build_tracepoint_payload(
         kev_payload,
         limit=args.limit,
-        oldest_first=args.oldest_first,
+        newest_first=not args.oldest_first,
         persist=not args.analysis_only,
         check_duplicates=not args.no_duplicate_check,
     )
