@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from tracepoint.db import get_session
-from tracepoint.schemas.finding import FindingCreate, FindingListResponse, FindingRead
+from tracepoint.schemas.finding import (
+    FindingCreate,
+    FindingListResponse,
+    FindingProvenanceRead,
+    FindingRead,
+)
 from tracepoint.services.finding import FindingService
 
 router = APIRouter(prefix="/findings", tags=["findings"])
@@ -51,6 +56,26 @@ def list_findings(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get(
+    "/{finding_id}/provenance",
+    response_model=FindingProvenanceRead,
+)
+def get_finding_provenance(
+    finding_id: str,
+    service: Annotated[FindingService, Depends(finding_service)],
+) -> FindingProvenanceRead:
+    """Return parsed provenance metadata for a finding."""
+    provenance = service.get_provenance(finding_id)
+
+    if provenance is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Finding not found",
+        )
+
+    return provenance
 
 
 @router.get(

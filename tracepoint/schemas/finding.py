@@ -55,3 +55,26 @@ class FindingListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class FindingProvenanceRead(BaseModel):
+    """Parsed source/provenance details for a finding."""
+
+    finding_id: str
+    title: str
+    source: FindingSource
+    source_dataset: str | None = None
+    source_url: str | None = None
+    catalog_version: str | None = None
+    catalog_release_date: str | None = None
+    catalog_total_records: int | None = None
+    cve: str | None = None
+    cwes: list[str] = Field(default_factory=list)
+    vendor_project: str | None = None
+    product: str | None = None
+    vulnerability: str | None = None
+    date_added_to_kev: str | None = None
+    due_date: str | None = None
+    known_ransomware_use: str | None = None
+    notes: str | None = None
+    raw: dict[str, str] = Field(default_factory=dict)
