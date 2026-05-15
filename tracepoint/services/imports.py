@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from tracepoint.models.finding import Finding
 from tracepoint.schemas.imports import (
     FindingImportCreate,
     FindingImportFailureRead,
@@ -83,6 +84,22 @@ class FindingImportService:
 
         intake_result = self.intake_service.ingest(intake_payload)
 
+        category = item.category or intake_result.triage.category
+        severity = item.severity or intake_result.triage.severity
+        confidence = (
+            item.confidence if item.confidence is not None else intake_result.triage.confidence
+        )
+
+        if intake_result.persisted and intake_result.finding_id is not None:
+            finding = self.session.get(Finding, intake_result.finding_id)
+            if finding is not None:
+                finding.category = category
+                finding.severity = severity
+                finding.confidence = confidence
+                self.session.add(finding)
+                self.session.commit()
+                self.session.refresh(finding)
+
         return FindingImportItemRead(
             index=index,
             title=item.title,
@@ -91,6 +108,6 @@ class FindingImportService:
             persisted=intake_result.persisted,
             duplicate_decision=intake_result.duplicate.decision,
             duplicate_score=intake_result.duplicate.highest_similarity,
-            category=intake_result.triage.category,
-            severity=intake_result.triage.severity,
+            category=category,
+            severity=severity,
         )
