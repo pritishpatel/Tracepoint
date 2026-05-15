@@ -22,7 +22,7 @@ SEVERITY_WEIGHTS: Final[dict[str, float]] = {
 CATEGORY_WEIGHTS: Final[dict[str, float]] = {
     "idor": 20.0,
     "auth_bypass": 22.0,
-    "exposed_secret": 20.0,
+    "exposed_secret": 20.0,  # nosec B105
     "account_compromise": 18.0,
     "cloud_misconfiguration": 16.0,
     "injection": 18.0,
@@ -32,7 +32,7 @@ CATEGORY_WEIGHTS: Final[dict[str, float]] = {
 
 SOURCE_WEIGHTS: Final[dict[str, float]] = {
     "bug_bounty": 10.0,
-    "secret_scan": 12.0,
+    "secret_scan": 12.0,  # nosec B105
     "manual": 8.0,
     "customer_report": 8.0,
     "internal_scan": 7.0,
