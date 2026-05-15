@@ -1,0 +1,52 @@
+[
+  {
+    "title": "CVE-2024-3094 XZ Utils supply-chain backdoor exposure",
+    "description": "Source dataset: CISA KEV\nSource URL: https://www.cisa.gov/known-exploited-vulnerabilities-catalog\nCVE: CVE-2024-3094\nVendor/Project: XZ Utils\nProduct: liblzma\nVulnerability: Supply-chain backdoor in compression library\nDate added to KEV: 2024-04-01\nDue date: 2026-05-10\nKnown ransomware use: Known\nRequired action: Identify affected Linux build and runtime assets, isolate vulnerable versions, and rotate impacted credentials.",
+    "source": "cisa_kev",
+    "severity": "critical",
+    "category": "supply_chain",
+    "affected_asset": "linux-build-fleet",
+    "reporter": "cisa-kev-import",
+    "confidence": 0.96
+  },
+  {
+    "title": "IDOR in invoice retrieval exposes tenant billing records",
+    "description": "Changing invoice_id in /v1/invoices/{invoice_id} returns another customer's invoice data.",
+    "source": "bug_bounty",
+    "severity": "high",
+    "category": "idor",
+    "affected_asset": "/v1/invoices/{invoice_id}",
+    "reporter": "security-researcher",
+    "confidence": 0.91
+  },
+  {
+    "title": "Exposed API key in public GitHub repository",
+    "description": "A secret scanning alert detected an active API key committed to a public repository.",
+    "source": "secret_scan",
+    "severity": "high",
+    "category": "exposed_secret",
+    "affected_asset": "github/example-repo",
+    "reporter": "secret-scanner",
+    "confidence": 0.88
+  },
+  {
+    "title": "Public object storage bucket with customer exports",
+    "description": "Cloud posture scan found public read access on an object storage bucket containing export artifacts.",
+    "source": "cloud_alert",
+    "severity": "medium",
+    "category": "cloud_misconfiguration",
+    "affected_asset": "s3://customer-export-artifacts",
+    "reporter": "cloud-cspm",
+    "confidence": 0.73
+  },
+  {
+    "title": "Suspicious login after MFA reset",
+    "description": "User logged in from a new location shortly after MFA reset and password rotation.",
+    "source": "edr_alert",
+    "severity": "medium",
+    "category": "account_compromise",
+    "affected_asset": "auth service",
+    "reporter": "identity-detection",
+    "confidence": 0.69
+  }
+]

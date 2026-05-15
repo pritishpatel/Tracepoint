@@ -39,6 +39,7 @@ from tracepoint.api.triage import router as triage_router
 from tracepoint.api.workflow import router as workflow_router
 from tracepoint.core.config import Settings, get_settings
 from tracepoint.core.logging import configure_logging
+from tracepoint.core.security import add_security_headers
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,8 @@ class ApplicationFactory:
 
     def configure_middleware(self, app: FastAPI) -> None:
         """Configure HTTP middleware."""
+        app.middleware("http")(add_security_headers)
+
         if not self.settings.server.cors.enabled:
             return
 

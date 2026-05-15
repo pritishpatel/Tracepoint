@@ -15,7 +15,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import Connection
 from tracepoint.core.config import get_settings
 from tracepoint.db.base import Base
-from tracepoint.models import Finding
+from tracepoint.models import Finding, TriageResult
 
 alembic_config = context.config
 
@@ -25,7 +25,7 @@ if alembic_config.config_file_name is not None:
 metadata = Base.metadata
 
 # Keep imported ORM models referenced so SQLAlchemy registers their tables.
-_ = Finding
+_ = (Finding, TriageResult)
 
 
 def database_url() -> str:

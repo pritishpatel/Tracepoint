@@ -59,3 +59,10 @@ tracepoint_vector_store/
 tracepoint_logs/
 
 artifacts/
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/test-results/
+frontend/playwright-report/
+frontend/out/
+frontend/.env.local

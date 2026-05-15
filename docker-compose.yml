@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tracepoint
+      POSTGRES_PASSWORD: tracepoint
+      POSTGRES_DB: tracepoint
+    ports:
+      - "5432:5432"
+    volumes:
+      - tracepoint-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracepoint"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+
+  api:
+    build: .
+    environment:
+      TRACEPOINT_AUTH_REQUIRED: "false"
+      TRACEPOINT_DB_URL: postgresql+psycopg://tracepoint:tracepoint@postgres:5432/tracepoint
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: local-dev-secret
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  tracepoint-postgres:

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from tracepoint.models.finding import Finding
@@ -263,12 +263,51 @@ class FindingService:
 
         return summary
 
-    def list_findings(self, limit: int, offset: int) -> tuple[list[Finding], int]:
+    def list_findings(
+        self,
+        limit: int,
+        offset: int,
+        severity: str | None = None,
+        status: str | None = None,
+        source: str | None = None,
+        category: str | None = None,
+        search: str | None = None,
+        kev_only: bool = False,
+        overdue_only: bool = False,
+    ) -> tuple[list[Finding], int]:
         """Return a paginated list of findings and total row count."""
-        total = self.session.scalar(select(func.count()).select_from(Finding)) or 0
+        filters = []
+
+        if severity:
+            filters.append(Finding.severity == severity)
+        if status:
+            filters.append(Finding.status == status)
+        if source:
+            filters.append(Finding.source == source)
+        if category:
+            filters.append(Finding.category == category)
+        if kev_only:
+            filters.append(Finding.source == "cisa_kev")
+        if overdue_only:
+            filters.append(Finding.description.ilike("%Due date:%"))
+        if search:
+            pattern = f"%{search}%"
+            filters.append(
+                or_(
+                    Finding.title.ilike(pattern),
+                    Finding.description.ilike(pattern),
+                    Finding.affected_asset.ilike(pattern),
+                    Finding.reporter.ilike(pattern),
+                    Finding.category.ilike(pattern),
+                )
+            )
+
+        base_statement = select(Finding).where(*filters)
+        total_statement = select(func.count()).select_from(base_statement.subquery())
+        total = self.session.scalar(total_statement) or 0
 
         statement: Select[tuple[Finding]] = (
-            select(Finding).order_by(Finding.created_at.desc()).limit(limit).offset(offset)
+            base_statement.order_by(Finding.created_at.desc()).limit(limit).offset(offset)
         )
 
         findings = list(self.session.scalars(statement).all())

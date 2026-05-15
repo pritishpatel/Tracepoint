@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from tracepoint.core.auth import Principal, require_roles
 from tracepoint.db import get_session
 from tracepoint.schemas.intake import IntakeReportCreate, IntakeReportRead
 from tracepoint.services.intake import IntakeService
@@ -29,6 +30,8 @@ def intake_service(
 def ingest_report(
     payload: IntakeReportCreate,
     service: Annotated[IntakeService, Depends(intake_service)],
+    principal: Annotated[Principal, Depends(require_roles("analyst", "admin"))],
 ) -> IntakeReportRead:
     """Ingest a raw security report through the full Tracepoint workflow."""
+    _ = principal
     return service.ingest(payload)

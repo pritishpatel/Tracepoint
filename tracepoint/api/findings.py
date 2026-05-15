@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from tracepoint.core.auth import Principal, require_roles
 from tracepoint.db import get_session
 from tracepoint.schemas.finding import (
     FindingCreate,
@@ -34,8 +35,10 @@ def finding_service(session: Annotated[Session, Depends(get_session)]) -> Findin
 def create_finding(
     payload: FindingCreate,
     service: Annotated[FindingService, Depends(finding_service)],
+    principal: Annotated[Principal, Depends(require_roles("analyst", "admin"))],
 ) -> FindingRead:
     """Create a new security finding."""
+    _ = principal
     finding = service.create_finding(payload)
     return FindingRead.model_validate(finding)
 
@@ -48,9 +51,26 @@ def list_findings(
     service: Annotated[FindingService, Depends(finding_service)],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
+    severity: Annotated[str | None, Query(max_length=32)] = None,
+    status: Annotated[str | None, Query(max_length=64)] = None,
+    source: Annotated[str | None, Query(max_length=64)] = None,
+    category: Annotated[str | None, Query(max_length=128)] = None,
+    search: Annotated[str | None, Query(max_length=300)] = None,
+    kev_only: bool = False,
+    overdue_only: bool = False,
 ) -> FindingListResponse:
     """List security findings."""
-    findings, total = service.list_findings(limit=limit, offset=offset)
+    findings, total = service.list_findings(
+        limit=limit,
+        offset=offset,
+        severity=severity,
+        status=status,
+        source=source,
+        category=category,
+        search=search,
+        kev_only=kev_only,
+        overdue_only=overdue_only,
+    )
 
     return FindingListResponse(
         items=[FindingRead.model_validate(finding) for finding in findings],

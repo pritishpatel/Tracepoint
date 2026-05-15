@@ -1,4 +1,4 @@
-.PHONY: format lint type test security secrets audit docs check clean
+.PHONY: format lint type test security secrets audit docs check clean dev seed migrate reset-db frontend-check check-all
 
 PYTHON := python
 PACKAGE := tracepoint
@@ -29,6 +29,24 @@ docs:
 	interrogate -q $(PACKAGE)
 
 check: format lint type test security
+
+frontend-check:
+	cd frontend && npm run lint && npm run typecheck && npm run build
+
+check-all: check frontend-check
+
+dev:
+	docker compose up --build
+
+seed:
+	$(PYTHON) scripts/seed_demo.py
+
+migrate:
+	alembic upgrade head
+
+reset-db:
+	rm -f tracepoint.db
+	alembic upgrade head
 
 clean:
 	find . -name "__pycache__" -type d -prune -exec rm -rf {} +

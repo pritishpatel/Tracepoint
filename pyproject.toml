@@ -4,12 +4,17 @@ version = "0.1.0"
 description = "AI-native SecOps triage, investigation, remediation, and evidence platform."
 requires-python = ">=3.10"
 dependencies = [
+    "alembic",
     "fastapi",
+    "psycopg[binary]",
     "pydantic",
     "pyyaml",
     "sqlalchemy>=2.0",
     "uvicorn[standard]",
 ]
+
+[tool.setuptools.packages.find]
+include = ["tracepoint*"]
 
 [project.optional-dependencies]
 dev = [
