@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import ClassVar
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
@@ -35,7 +36,7 @@ class StoredFindingComment:
 class FindingCommentService:
     """Manage comments attached to findings."""
 
-    _comments: list[StoredFindingComment] = []
+    _comments: ClassVar[list[StoredFindingComment]] = []
 
     def __init__(self, session: Session) -> None:
         """Initialize the comment service."""
