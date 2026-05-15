@@ -71,41 +71,130 @@ def load_json_from_url(url: str) -> dict[str, Any]:
     return payload
 
 
+def normalized_kev_text(record: dict[str, Any]) -> str:
+    """Return normalized searchable text for one KEV record."""
+    fields = [
+        record.get("vulnerabilityName", ""),
+        record.get("shortDescription", ""),
+        record.get("requiredAction", ""),
+        record.get("notes", ""),
+        record.get("vendorProject", ""),
+        record.get("product", ""),
+    ]
+    return " ".join(str(field).lower() for field in fields if field)
+
+
 def infer_category(record: dict[str, Any]) -> str:
-    """Infer Tracepoint category from KEV text fields."""
-    text = " ".join(
-        str(record.get(field, ""))
-        for field in (
-            "vulnerabilityName",
-            "shortDescription",
-            "requiredAction",
-            "notes",
-        )
-    ).lower()
+    """Infer a Tracepoint category from CISA KEV text."""
+    text = normalized_kev_text(record)
 
-    if any(token in text for token in ("remote code execution", "rce", "arbitrary code")):
-        return "remote_code_execution"
+    category_rules: tuple[tuple[str, tuple[str, ...]], ...] = (
+        (
+            "remote_code_execution",
+            (
+                "remote code execution",
+                "execute arbitrary code",
+                "arbitrary code execution",
+                "code execution",
+                "execute arbitrary commands",
+                "command execution",
+                "out-of-bounds write",
+                "improper input validation",
+                "deserialization",
+                "pre-authorization remote",
+            ),
+        ),
+        (
+            "auth_bypass",
+            (
+                "authentication bypass",
+                "bypass authentication",
+                "missing authentication",
+                "improper authentication",
+                "unauthenticated remote attacker",
+                "gain unauthorized access",
+            ),
+        ),
+        (
+            "privilege_escalation",
+            (
+                "privilege escalation",
+                "escalate privileges",
+                "gain elevated privileges",
+                "gain administrative privileges",
+                "gain admin",
+                "root privileges",
+                "local attacker to gain",
+            ),
+        ),
+        (
+            "exposed_secret",
+            (
+                "storing passwords",
+                "recoverable format",
+                "credential",
+                "credentials",
+                "secret",
+                "api key",
+                "sensitive information",
+                "exposure of sensitive",
+            ),
+        ),
+        (
+            "path_traversal",
+            (
+                "path traversal",
+                "relative path traversal",
+                "directory traversal",
+                "zip slip",
+                "write arbitrary files",
+                "arbitrary file",
+            ),
+        ),
+        (
+            "injection",
+            (
+                "sql injection",
+                "command injection",
+                "code injection",
+                "template injection",
+                "ldap injection",
+                "injection vulnerability",
+            ),
+        ),
+        (
+            "xss",
+            (
+                "cross-site scripting",
+                "cross site scripting",
+                " xss ",
+                "execute arbitrary javascript",
+                "javascript within",
+            ),
+        ),
+        (
+            "ssrf",
+            (
+                "server-side request forgery",
+                "server side request forgery",
+                " ssrf ",
+            ),
+        ),
+        (
+            "information_disclosure",
+            (
+                "information disclosure",
+                "disclose information",
+                "view sensitive information",
+                "read data",
+                "obtain sensitive",
+            ),
+        ),
+    )
 
-    if any(token in text for token in ("privilege escalation", "elevation of privilege")):
-        return "privilege_escalation"
-
-    if any(token in text for token in ("cross-site scripting", "xss")):
-        return "xss"
-
-    if any(token in text for token in ("sql injection", "command injection", "injection")):
-        return "injection"
-
-    if any(token in text for token in ("authentication bypass", "auth bypass")):
-        return "auth_bypass"
-
-    if any(token in text for token in ("path traversal", "directory traversal")):
-        return "path_traversal"
-
-    if any(token in text for token in ("deserialization", "deserialize")):
-        return "insecure_deserialization"
-
-    if any(token in text for token in ("information disclosure", "sensitive information")):
-        return "information_disclosure"
+    for category, needles in category_rules:
+        if any(needle in text for needle in needles):
+            return category
 
     return "known_exploited_vulnerability"
 
@@ -116,20 +205,57 @@ def category_from_kev(record: dict[str, Any]) -> str:
 
 
 def infer_severity(record: dict[str, Any]) -> str:
-    """Infer severity from KEV fields."""
-    ransomware_use = str(record.get("knownRansomwareCampaignUse", "")).strip().lower()
-    category = infer_category(record)
+    """Infer severity from KEV impact wording.
 
-    if ransomware_use == "known":
+    CISA KEV records do not provide CVSS directly. This mapper assigns
+    deterministic product severity labels from exploitation impact language.
+    """
+    text = normalized_kev_text(record)
+    ransomware_use = str(record.get("knownRansomwareCampaignUse", "")).lower()
+
+    critical_terms = (
+        "remote code execution",
+        "pre-authorization remote",
+        "unauthenticated remote attacker",
+        "bypass authentication",
+        "missing authentication for critical function",
+        "gain administrative privileges",
+        "root privileges",
+        "take complete control",
+    )
+    high_terms = (
+        "sql injection",
+        "command injection",
+        "privilege escalation",
+        "escalate privileges",
+        "storing passwords",
+        "recoverable format",
+        "credential",
+        "sensitive information",
+        "write arbitrary files",
+        "path traversal",
+        "arbitrary code",
+        "arbitrary commands",
+        "known",
+    )
+    medium_terms = (
+        "cross-site scripting",
+        "cross site scripting",
+        "spoofing",
+        "information disclosure",
+        "view sensitive information",
+        "read data",
+        "limited admin actions",
+    )
+
+    if any(term in text for term in critical_terms):
         return "critical"
 
-    if category in {
-        "remote_code_execution",
-        "auth_bypass",
-        "privilege_escalation",
-        "injection",
-    }:
+    if any(term in text for term in high_terms) or ransomware_use == "known":
         return "high"
+
+    if any(term in text for term in medium_terms):
+        return "medium"
 
     return "medium"
 
