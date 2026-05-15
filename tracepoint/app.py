@@ -30,6 +30,7 @@ from tracepoint.api.evidence import router as evidence_router
 from tracepoint.api.export import router as export_router
 from tracepoint.api.findings import router as findings_router
 from tracepoint.api.health import router as health_router
+from tracepoint.api.imports import router as imports_router
 from tracepoint.api.intake import router as intake_router
 from tracepoint.api.risk import router as risk_router
 from tracepoint.api.sla import router as sla_router
@@ -109,6 +110,7 @@ class ApplicationFactory:
         app.include_router(sla_router, prefix=api_prefix)
         app.include_router(workflow_router, prefix=api_prefix)
         app.include_router(comment_router, prefix=api_prefix)
+        app.include_router(imports_router, prefix=api_prefix)
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI) -> AsyncIterator[None]:

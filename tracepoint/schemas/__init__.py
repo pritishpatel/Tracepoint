@@ -15,6 +15,13 @@ from tracepoint.schemas.evidence import (
 from tracepoint.schemas.export import ExportFindingRead as ExportRecordRead
 from tracepoint.schemas.export import ExportSummaryRead
 from tracepoint.schemas.finding import FindingCreate, FindingListResponse, FindingRead
+from tracepoint.schemas.imports import (
+    FindingImportCreate,
+    FindingImportFailureRead,
+    FindingImportItemCreate,
+    FindingImportItemRead,
+    FindingImportSummaryRead,
+)
 from tracepoint.schemas.intake import (
     IntakeDuplicateRead,
     IntakeReportCreate,
@@ -43,6 +50,11 @@ __all__ = [
     "ExportRecordRead",
     "ExportSummaryRead",
     "FindingCreate",
+    "FindingImportCreate",
+    "FindingImportFailureRead",
+    "FindingImportItemCreate",
+    "FindingImportItemRead",
+    "FindingImportSummaryRead",
     "FindingListResponse",
     "FindingRead",
     "FindingRiskRead",

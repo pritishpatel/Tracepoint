@@ -6,6 +6,7 @@ from tracepoint.services.duplicate_detection import DuplicateDetectionService
 from tracepoint.services.evidence import EvidenceBundleService
 from tracepoint.services.export import FindingExportService
 from tracepoint.services.finding import FindingService
+from tracepoint.services.imports import FindingImportService
 from tracepoint.services.intake import IntakeService
 from tracepoint.services.risk import FindingRiskService
 from tracepoint.services.sla import FindingSlaService
@@ -20,6 +21,7 @@ __all__ = [
     "DuplicateDetectionService",
     "EvidenceBundleService",
     "FindingExportService",
+    "FindingImportService",
     "FindingRiskService",
     "FindingService",
     "FindingSlaService",
