@@ -265,13 +265,80 @@ def severity_from_kev(record: dict[str, Any]) -> str:
     return infer_severity(record)
 
 
-def build_description(record: dict[str, Any]) -> str:
+def description_from_kev(
+    record: dict[str, Any],
+    *,
+    source_url: str,
+    catalog_version: str | None = None,
+    date_released: str | None = None,
+    catalog_count: int | None = None,
+) -> str:
+    """Build an import description from a CISA KEV record with provenance."""
+    cve_id = str(record.get("cveID") or "").strip()
+    vendor = str(record.get("vendorProject") or "").strip()
+    product = str(record.get("product") or "").strip()
+    vulnerability = str(record.get("vulnerabilityName") or "").strip()
+    short_description = str(record.get("shortDescription") or "").strip()
+    date_added = str(record.get("dateAdded") or "").strip()
+    required_action = str(record.get("requiredAction") or "").strip()
+    due_date = str(record.get("dueDate") or "").strip()
+    ransomware = str(record.get("knownRansomwareCampaignUse") or "").strip()
+    notes = str(record.get("notes") or "").strip()
+    cwes = record.get("cwes") or []
+
+    if isinstance(cwes, list):
+        cwe_text = ", ".join(str(cwe).strip() for cwe in cwes if str(cwe).strip())
+    else:
+        cwe_text = str(cwes).strip()
+
+    lines = [
+        "Source dataset: CISA Known Exploited Vulnerabilities Catalog",
+        f"Source URL: {source_url}",
+        f"Catalog version: {catalog_version}" if catalog_version else "",
+        f"Catalog release date: {date_released}" if date_released else "",
+        f"Catalog total records: {catalog_count}" if catalog_count is not None else "",
+        f"CVE: {cve_id}",
+        f"Vendor/Project: {vendor}",
+        f"Product: {product}",
+        f"Vulnerability: {vulnerability}",
+        f"CWE(s): {cwe_text}" if cwe_text else "",
+        f"Description: {short_description}",
+        f"Date added to KEV: {date_added}",
+        f"Required action: {required_action}",
+        f"Due date: {due_date}",
+        f"Known ransomware use: {ransomware}",
+        f"Notes: {notes}",
+    ]
+
+    return "\n".join(line for line in lines if line and not line.endswith(": "))
+
+
+def build_description(
+    record: dict[str, Any],
+    *,
+    source_url: str | None = None,
+    catalog_version: str | None = None,
+    date_released: str | None = None,
+    catalog_count: int | None = None,
+) -> str:
     """Build Tracepoint finding description from a KEV record."""
+    cwes = record.get("cwes") or []
+    if isinstance(cwes, list):
+        cwe_text = ", ".join(str(cwe).strip() for cwe in cwes if str(cwe).strip())
+    else:
+        cwe_text = str(cwes).strip()
+
     fields = [
+        ("Source dataset", "CISA Known Exploited Vulnerabilities Catalog") if source_url else None,
+        ("Source URL", source_url) if source_url else None,
+        ("Catalog version", catalog_version) if catalog_version else None,
+        ("Catalog release date", date_released) if date_released else None,
+        ("Catalog total records", catalog_count) if catalog_count is not None else None,
         ("CVE", record.get("cveID")),
         ("Vendor/Project", record.get("vendorProject")),
         ("Product", record.get("product")),
         ("Vulnerability", record.get("vulnerabilityName")),
+        ("CWE(s)", cwe_text) if cwe_text else None,
         ("Description", record.get("shortDescription")),
         ("Date added to KEV", record.get("dateAdded")),
         ("Required action", record.get("requiredAction")),
@@ -280,7 +347,13 @@ def build_description(record: dict[str, Any]) -> str:
         ("Notes", record.get("notes")),
     ]
 
-    return "\n".join(f"{label}: {value}" for label, value in fields if value not in (None, ""))
+    return "\n".join(
+        f"{label}: {value}"
+        for field in fields
+        if field is not None
+        for label, value in [field]
+        if value not in (None, "")
+    )
 
 
 def map_kev_record_to_tracepoint_item(record: dict[str, Any]) -> dict[str, Any]:
@@ -351,6 +424,26 @@ def map_kev_record(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def map_kev_record_with_provenance(
+    record: dict[str, Any],
+    *,
+    source_url: str,
+    catalog_version: str,
+    date_released: str,
+    catalog_count: int | None,
+) -> dict[str, Any]:
+    """Map one KEV record while preserving CISA catalog provenance."""
+    item = map_kev_record(record)
+    item["description"] = build_description(
+        record,
+        source_url=source_url,
+        catalog_version=catalog_version,
+        date_released=date_released,
+        catalog_count=catalog_count,
+    )
+    return item
+
+
 def build_tracepoint_payload(
     kev_payload: dict[str, Any],
     limit: int | None = None,
@@ -360,6 +453,11 @@ def build_tracepoint_payload(
 ) -> dict[str, Any]:
     """Build a Tracepoint bulk-import payload from a CISA KEV payload."""
     records = extract_records(kev_payload)
+    catalog_version = str(kev_payload.get("catalogVersion") or "")
+    date_released = str(kev_payload.get("dateReleased") or "")
+    raw_catalog_count = kev_payload.get("count")
+    catalog_count = int(raw_catalog_count) if raw_catalog_count is not None else None
+    source_url = str(kev_payload.get("sourceUrl") or DEFAULT_CISA_KEV_URL)
 
     records = sorted(
         records,
@@ -374,7 +472,16 @@ def build_tracepoint_payload(
         "source": "cisa_kev",
         "persist": persist,
         "check_duplicates": check_duplicates,
-        "items": [map_kev_record(record) for record in records],
+        "items": [
+            map_kev_record_with_provenance(
+                record,
+                source_url=source_url,
+                catalog_version=catalog_version,
+                date_released=date_released,
+                catalog_count=catalog_count,
+            )
+            for record in records
+        ],
     }
 
 

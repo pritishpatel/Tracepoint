@@ -91,3 +91,43 @@ def test_write_payload_shape_can_roundtrip_json() -> None:
     assert decoded["persist"] is False
     assert decoded["check_duplicates"] is False
     assert len(decoded["items"]) == 2
+
+
+def test_description_from_kev_includes_cisa_provenance() -> None:
+    """CISA KEV imports should preserve source dataset provenance."""
+    from scripts.import_cisa_kev import DEFAULT_CISA_KEV_URL, build_description
+
+    record = {
+        "cveID": "CVE-2026-20182",
+        "vendorProject": "Cisco",
+        "product": "Catalyst SD-WAN",
+        "vulnerabilityName": "Cisco Catalyst SD-WAN Controller Authentication Bypass Vulnerability",
+        "shortDescription": (
+            "Authentication bypass allows unauthenticated remote administrative access."
+        ),
+        "dateAdded": "2026-05-14",
+        "requiredAction": "Apply mitigations per vendor instructions.",
+        "dueDate": "2026-05-17",
+        "knownRansomwareCampaignUse": "Unknown",
+        "notes": "https://nvd.nist.gov/vuln/detail/CVE-2026-20182",
+        "cwes": ["CWE-287"],
+    }
+
+    description = build_description(
+        record,
+        source_url=DEFAULT_CISA_KEV_URL,
+        catalog_version="2026.05.14",
+        date_released="2026-05-14T17:31:13.2397Z",
+        catalog_count=1591,
+    )
+
+    assert "Source dataset: CISA Known Exploited Vulnerabilities Catalog" in description
+    assert (
+        "Source URL: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+        in description
+    )
+    assert "Catalog version: 2026.05.14" in description
+    assert "Catalog release date: 2026-05-14T17:31:13.2397Z" in description
+    assert "Catalog total records: 1591" in description
+    assert "CVE: CVE-2026-20182" in description
+    assert "CWE(s): CWE-287" in description
