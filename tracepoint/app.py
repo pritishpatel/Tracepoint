@@ -26,6 +26,7 @@ from tracepoint.api.activity import router as activity_router
 from tracepoint.api.dashboard import router as dashboard_router
 from tracepoint.api.duplicates import router as duplicates_router
 from tracepoint.api.evidence import router as evidence_router
+from tracepoint.api.export import router as export_router
 from tracepoint.api.findings import router as findings_router
 from tracepoint.api.health import router as health_router
 from tracepoint.api.intake import router as intake_router
@@ -98,6 +99,7 @@ class ApplicationFactory:
         app.include_router(trends_router, prefix=api_prefix)
         app.include_router(activity_router, prefix=api_prefix)
         app.include_router(evidence_router, prefix=api_prefix)
+        app.include_router(export_router, prefix=api_prefix)
         app.include_router(intake_router, prefix=api_prefix)
 
     @asynccontextmanager

@@ -17,6 +17,7 @@ from tracepoint.schemas.evidence import (
     EvidenceBundleCreate,
     EvidenceBundleRead,
 )
+from tracepoint.schemas.export import ExportFindingRead, ExportSummaryRead
 from tracepoint.schemas.finding import FindingCreate, FindingListResponse, FindingRead
 from tracepoint.schemas.intake import (
     IntakeDuplicateRead,
@@ -47,6 +48,8 @@ __all__ = [
     "EvidenceArtifact",
     "EvidenceBundleCreate",
     "EvidenceBundleRead",
+    "ExportFindingRead",
+    "ExportSummaryRead",
     "FindingCreate",
     "FindingListResponse",
     "FindingRead",
