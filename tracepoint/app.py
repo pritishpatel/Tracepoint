@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from tracepoint.api.activity import router as activity_router
+from tracepoint.api.comment import router as comment_router
 from tracepoint.api.dashboard import router as dashboard_router
 from tracepoint.api.duplicates import router as duplicates_router
 from tracepoint.api.evidence import router as evidence_router
@@ -107,6 +108,7 @@ class ApplicationFactory:
         app.include_router(risk_router, prefix=api_prefix)
         app.include_router(sla_router, prefix=api_prefix)
         app.include_router(workflow_router, prefix=api_prefix)
+        app.include_router(comment_router, prefix=api_prefix)
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI) -> AsyncIterator[None]:
