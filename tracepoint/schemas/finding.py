@@ -15,7 +15,7 @@ class FindingCreate(BaseModel):
     title: str = Field(min_length=5, max_length=300)
     description: str = Field(min_length=10, max_length=50_000)
 
-    source: FindingSource = FindingSource.MANUAL
+    source: str = FindingSource.MANUAL
     severity: FindingSeverity = FindingSeverity.UNKNOWN
     status: FindingStatus = FindingStatus.NEW
 
@@ -35,7 +35,7 @@ class FindingRead(BaseModel):
     title: str
     description: str
 
-    source: FindingSource
+    source: str
     severity: FindingSeverity
     status: FindingStatus
 
@@ -62,7 +62,7 @@ class FindingProvenanceRead(BaseModel):
 
     finding_id: str
     title: str
-    source: FindingSource
+    source: str
     source_dataset: str | None = None
     source_url: str | None = None
     catalog_version: str | None = None

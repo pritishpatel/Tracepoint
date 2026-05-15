@@ -10,7 +10,7 @@ from __future__ import annotations
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
-from tracepoint.models.finding import Finding, FindingSource
+from tracepoint.models.finding import Finding
 from tracepoint.schemas.finding import FindingCreate, FindingProvenanceRead
 
 
@@ -81,7 +81,7 @@ class FindingService:
         return FindingProvenanceRead(
             finding_id=finding.id,
             title=finding.title,
-            source=FindingSource(finding.source),
+            source=finding.source,
             source_dataset=raw.get("Source dataset"),
             source_url=raw.get("Source URL"),
             catalog_version=raw.get("Catalog version"),
