@@ -11,6 +11,7 @@ from tracepoint.db import get_session
 from tracepoint.schemas.finding import (
     FindingCreate,
     FindingKevDetailRead,
+    FindingKevSummaryRead,
     FindingListResponse,
     FindingProvenanceRead,
     FindingRead,
@@ -57,6 +58,17 @@ def list_findings(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get(
+    "/kev-summary",
+    response_model=FindingKevSummaryRead,
+)
+def get_finding_kev_summary(
+    service: Annotated[FindingService, Depends(finding_service)],
+) -> FindingKevSummaryRead:
+    """Return collection-level CISA KEV dashboard summary."""
+    return service.get_kev_summary()
 
 
 @router.get(

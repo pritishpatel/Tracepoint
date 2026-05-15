@@ -101,3 +101,35 @@ class FindingKevDetailRead(BaseModel):
     severity: str
     category: str | None = None
     priority_reason: str
+
+
+class FindingKevSummaryItemRead(BaseModel):
+    """Condensed KEV finding used in summary views."""
+
+    finding_id: str
+    title: str
+    cve: str | None = None
+    vendor_project: str | None = None
+    product: str | None = None
+    severity: str
+    category: str | None = None
+    kev_due_date: str | None = None
+    days_until_due: int | None = None
+    is_overdue: bool
+    known_ransomware_use: bool
+    priority_reason: str
+
+
+class FindingKevSummaryRead(BaseModel):
+    """Collection-level CISA KEV summary for dashboard prioritization."""
+
+    total_kev_findings: int
+    critical: int = 0
+    high: int = 0
+    medium: int = 0
+    low: int = 0
+    unknown: int = 0
+    overdue: int = 0
+    due_soon: int = 0
+    known_ransomware_use: int = 0
+    top_due_items: list[FindingKevSummaryItemRead] = Field(default_factory=list)

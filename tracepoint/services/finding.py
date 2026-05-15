@@ -13,7 +13,13 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from tracepoint.models.finding import Finding
-from tracepoint.schemas.finding import FindingCreate, FindingKevDetailRead, FindingProvenanceRead
+from tracepoint.schemas.finding import (
+    FindingCreate,
+    FindingKevDetailRead,
+    FindingKevSummaryItemRead,
+    FindingKevSummaryRead,
+    FindingProvenanceRead,
+)
 
 
 def _parse_key_value_description(description: str) -> dict[str, str]:
@@ -191,6 +197,71 @@ class FindingService:
             category=finding.category,
             priority_reason=priority_reason,
         )
+
+    def get_kev_summary(self) -> FindingKevSummaryRead:
+        """Return collection-level CISA KEV prioritization summary."""
+        statement: Select[tuple[Finding]] = select(Finding).where(Finding.source == "cisa_kev")
+        findings = list(self.session.scalars(statement).all())
+
+        summary = FindingKevSummaryRead(total_kev_findings=len(findings))
+        detail_items: list[FindingKevDetailRead] = []
+
+        for finding in findings:
+            detail = self.get_kev_detail(finding.id)
+            if detail is None:
+                continue
+
+            detail_items.append(detail)
+
+            severity = detail.severity.lower()
+            if severity == "critical":
+                summary.critical += 1
+            elif severity == "high":
+                summary.high += 1
+            elif severity == "medium":
+                summary.medium += 1
+            elif severity == "low":
+                summary.low += 1
+            else:
+                summary.unknown += 1
+
+            if detail.is_overdue:
+                summary.overdue += 1
+
+            if detail.days_until_due is not None and 0 <= detail.days_until_due <= 7:
+                summary.due_soon += 1
+
+            if detail.known_ransomware_use:
+                summary.known_ransomware_use += 1
+
+        prioritized = sorted(
+            detail_items,
+            key=lambda item: (
+                not item.is_overdue,
+                item.days_until_due if item.days_until_due is not None else 999999,
+                0 if item.severity == "critical" else 1,
+            ),
+        )
+
+        summary.top_due_items = [
+            FindingKevSummaryItemRead(
+                finding_id=item.finding_id,
+                title=item.title,
+                cve=item.cve,
+                vendor_project=item.vendor_project,
+                product=item.product,
+                severity=item.severity,
+                category=item.category,
+                kev_due_date=item.kev_due_date,
+                days_until_due=item.days_until_due,
+                is_overdue=item.is_overdue,
+                known_ransomware_use=item.known_ransomware_use,
+                priority_reason=item.priority_reason,
+            )
+            for item in prioritized[:10]
+        ]
+
+        return summary
 
     def list_findings(self, limit: int, offset: int) -> tuple[list[Finding], int]:
         """Return a paginated list of findings and total row count."""

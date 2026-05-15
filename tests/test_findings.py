@@ -72,8 +72,8 @@ def test_get_missing_finding_returns_404() -> None:
 def test_get_finding_provenance_returns_parsed_cisa_metadata(
     reset_database_schema,
 ) -> None:
-    client = TestClient(app)
     """Finding provenance endpoint should parse CISA KEV description fields."""
+    client = TestClient(app)
     create_response = client.post(
         "/api/v1/findings",
         json={
@@ -127,8 +127,8 @@ def test_get_finding_provenance_returns_parsed_cisa_metadata(
 def test_get_finding_provenance_returns_404_for_missing_finding(
     reset_database_schema,
 ) -> None:
-    client = TestClient(app)
     """Missing finding provenance should return 404."""
+    client = TestClient(app)
     response = client.get("/api/v1/findings/not-a-real-id/provenance")
 
     assert response.status_code == 404
@@ -203,3 +203,83 @@ def test_get_finding_kev_detail_returns_404_for_missing_finding(
     response = client.get("/api/v1/findings/not-a-real-id/kev-detail")
 
     assert response.status_code == 404
+
+
+def test_get_finding_kev_summary_returns_collection_metrics(
+    reset_database_schema,
+) -> None:
+    """KEV summary endpoint should aggregate CISA KEV operational metrics."""
+    client = TestClient(app)
+
+    records = [
+        {
+            "title": "CVE-2026-1001: Example Critical",
+            "description": (
+                "Source dataset: CISA Known Exploited Vulnerabilities Catalog\n"
+                "CVE: CVE-2026-1001\n"
+                "Vendor/Project: ExampleVendor\n"
+                "Product: ExampleProduct\n"
+                "Vulnerability: Example Critical Vulnerability\n"
+                "CWE(s): CWE-287\n"
+                "Date added to KEV: 2026-05-01\n"
+                "Required action: Patch immediately.\n"
+                "Due date: 2026-05-10\n"
+                "Known ransomware use: Known\n"
+                "Notes: https://nvd.nist.gov/vuln/detail/CVE-2026-1001"
+            ),
+            "source": "cisa_kev",
+            "severity": "critical",
+            "category": "auth_bypass",
+            "affected_asset": "ExampleProduct CVE-2026-1001",
+            "confidence": 0.95,
+        },
+        {
+            "title": "CVE-2026-1002: Example High",
+            "description": (
+                "Source dataset: CISA Known Exploited Vulnerabilities Catalog\n"
+                "CVE: CVE-2026-1002\n"
+                "Vendor/Project: ExampleVendor\n"
+                "Product: ExampleProductTwo\n"
+                "Vulnerability: Example High Vulnerability\n"
+                "CWE(s): CWE-22\n"
+                "Date added to KEV: 2026-05-02\n"
+                "Required action: Apply mitigations.\n"
+                "Due date: 2099-05-10\n"
+                "Known ransomware use: Unknown\n"
+                "Notes: https://nvd.nist.gov/vuln/detail/CVE-2026-1002"
+            ),
+            "source": "cisa_kev",
+            "severity": "high",
+            "category": "path_traversal",
+            "affected_asset": "ExampleProductTwo CVE-2026-1002",
+            "confidence": 0.95,
+        },
+        {
+            "title": "Manual finding should not be counted",
+            "description": "This is a regular manual finding, not a CISA KEV item.",
+            "source": "manual",
+            "severity": "critical",
+            "category": "manual",
+            "affected_asset": "internal app",
+            "confidence": 0.5,
+        },
+    ]
+
+    for record in records:
+        response = client.post("/api/v1/findings", json=record)
+        assert response.status_code == 201
+
+    response = client.get("/api/v1/findings/kev-summary")
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["total_kev_findings"] == 2
+    assert payload["critical"] == 1
+    assert payload["high"] == 1
+    assert payload["medium"] == 0
+    assert payload["known_ransomware_use"] == 1
+    assert payload["overdue"] >= 1
+    assert len(payload["top_due_items"]) == 2
+    assert payload["top_due_items"][0]["cve"] == "CVE-2026-1001"
+    assert payload["top_due_items"][0]["known_ransomware_use"] is True
